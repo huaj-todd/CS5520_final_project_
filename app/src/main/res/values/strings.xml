@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">test</string>
+    <string name="button">Button</string>
+    <string name="todo">TODO</string>
+    <string name="textview">TextView</string>
+    <string name="quick_posts">Quick Posts!</string>
+</resources>
