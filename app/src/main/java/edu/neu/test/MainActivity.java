@@ -14,13 +14,18 @@ import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
 
+import com.spotify.protocol.client.CallResult;
+import com.spotify.protocol.client.ErrorCallback;
 import com.spotify.protocol.types.Image;
+import com.spotify.protocol.types.ListItems;
 import com.spotify.protocol.types.Track;
 
 public class MainActivity extends AppCompatActivity {
     private static final String CLIENT_ID = "d137c858782648f7b8b9e8c87d4de56d";
     private static final String REDIRECT_URI = "comspotifytestsdk://callback";
     private SpotifyAppRemote mSpotifyAppRemote;
+    private final ErrorCallback mErrorCallback = this::logError;
+
 
     ImageView a;
     Button b1;
@@ -29,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
     TextView t2;
     ImageView a3;
     TextView t3;
+    TextView tt1;
+    ImageView tt2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
         a3=findViewById(R.id.imageView2);
         t3= findViewById(R.id.textView3);
 
+        tt1= findViewById(R.id.textView6);
+        tt2= findViewById(R.id.test001);
     }
 
     @Override
@@ -87,21 +96,61 @@ public class MainActivity extends AppCompatActivity {
                     if (track != null) {
                         Log.d("MainActivity", " "+track.name + " by " + track.artist.name);
                         Toast.makeText(getApplicationContext(),("MainActivity"+" "+track.name + " by " + track.artist.name),Toast.LENGTH_LONG).show();
-                                mSpotifyAppRemote
+
+
+
+                        mSpotifyAppRemote
+                                .getContentApi()
+                                .getRecommendedContentItems("Default")
+                                .setResultCallback(data -> {
+                                    Log.i("MainActivity", "getRecommendedContentItems="+data.items[1].uri);
+                                    mSpotifyAppRemote.getContentApi().getChildrenOfItem(data.items[2],5,0 ).setResultCallback(data1 ->{
+                                        tt1.setText(data.items[2].title);
+                                        Log.d("Good:", (Integer.toString(data.total)+"vs"+ Integer.toString(data1.total)));
+                                        mSpotifyAppRemote.getContentApi().getChildrenOfItem(data1.items[0],5,0 ).setResultCallback(data2 -> {
+                                            mSpotifyAppRemote.getImagesApi()
+                                                    .getImage(data2.items[0].imageUri,Image.Dimension.MEDIUM)
+                                                    .setResultCallback(bitmap->{
+                                                        a.setImageBitmap(bitmap);
+                                                        t1.setText(data2.items[0].title);
+
+                                                    });
+                                            mSpotifyAppRemote.getImagesApi()
+                                                    .getImage(data2.items[1].imageUri,Image.Dimension.MEDIUM)
+                                                    .setResultCallback(bitmap->{
+                                                        a2.setImageBitmap(bitmap);
+                                                        t2.setText(data2.items[1].title);
+                                                    });
+                                            mSpotifyAppRemote.getImagesApi()
+                                                    .getImage(data2.items[2].imageUri,Image.Dimension.MEDIUM)
+                                                    .setResultCallback(bitmap->{
+                                                        a3.setImageBitmap(bitmap);
+                                                        t3.setText(data2.items[2].title);
+                                                    });
+
+                                        });
+
+                                    });
+
+                                });
+                        /**
+                        mSpotifyAppRemote
                                 .getImagesApi()
                                 .getImage(track.imageUri,Image.Dimension.MEDIUM)
                                 .setResultCallback(bitmap -> {
                                     a.setImageBitmap(bitmap);
-                                    t1.setText(
-                                            track.name);
+                                    //t1.setText(
+                                           // track.name);
                                     a2.setImageBitmap(bitmap);
                                     t2.setText(track.artist.name);
 
                                     a3.setImageBitmap(bitmap);
                                     t3.setText(track.album.name);
 
-                                });
+                                    //tt2.setImageBitmap(bitmap);
 
+                                });
+*/
                     }
                     else if(track == null) {
                         Log.d("Main Activity","Not playing any song at all");
@@ -117,6 +166,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+    }
+    private void logError(Throwable throwable) {
+        Toast.makeText(this, "R.string.err_generic_toast", Toast.LENGTH_SHORT).show();
+        Log.e(MainActivity.class.getSimpleName(), "", throwable);
     }
 
 }
