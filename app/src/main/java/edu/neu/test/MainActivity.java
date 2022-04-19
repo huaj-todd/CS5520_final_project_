@@ -20,6 +20,8 @@ import com.spotify.protocol.types.Image;
 import com.spotify.protocol.types.ListItems;
 import com.spotify.protocol.types.Track;
 
+import java.util.Random;
+
 public class MainActivity extends AppCompatActivity {
     private static final String CLIENT_ID = "d137c858782648f7b8b9e8c87d4de56d";
     private static final String REDIRECT_URI = "comspotifytestsdk://callback";
@@ -103,10 +105,14 @@ public class MainActivity extends AppCompatActivity {
                                 .getContentApi()
                                 .getRecommendedContentItems("Default")
                                 .setResultCallback(data -> {
-                                    Log.i("MainActivity", "getRecommendedContentItems="+data.items[1].uri);
-                                    mSpotifyAppRemote.getContentApi().getChildrenOfItem(data.items[2],5,0 ).setResultCallback(data1 ->{
-                                        tt1.setText(data.items[2].title);
-                                        Log.d("Good:", (Integer.toString(data.total)+"vs"+ Integer.toString(data1.total)));
+                                    Log.i("MainActivity", "getRecommendedContentItems="+data.total);
+                                    //Be able to pick a recommendation section.
+                                    Random random = new Random();
+                                    int num = random.nextInt(data.total - 1 + 1) + 1;
+                                    //Log.d("num ",Integer.toString(num));
+                                    mSpotifyAppRemote.getContentApi().getChildrenOfItem(data.items[num],5,0 ).setResultCallback(data1 ->{
+                                        tt1.setText("Quick Listen:"+ data.items[num].title);
+                                       // Log.d("Good:", (Integer.toString(data.total)+"vs"+ Integer.toString(data1.total)));
                                         mSpotifyAppRemote.getContentApi().getChildrenOfItem(data1.items[0],5,0 ).setResultCallback(data2 -> {
                                             mSpotifyAppRemote.getImagesApi()
                                                     .getImage(data2.items[0].imageUri,Image.Dimension.MEDIUM)
