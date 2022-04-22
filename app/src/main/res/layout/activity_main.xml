@@ -11,7 +11,7 @@
         android:id="@+id/buttonTest1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="onConnectClicked"
+        android:onClick="onRequestTokenClicked"
         android:text="search"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.471"
@@ -66,6 +66,12 @@
                         android:layout_height="wrap_content"
                         android:text="@string/textview"
                         android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/textViewArtist1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="TextView" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -86,6 +92,12 @@
                         android:layout_height="wrap_content"
                         android:text="TextView"
                         android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/textViewArtist2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="TextView" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -106,6 +118,12 @@
                         android:layout_height="wrap_content"
                         android:text="@string/textview"
                         android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/textViewartist3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="TextView" />
 
                 </LinearLayout>
 
@@ -133,15 +151,30 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <ImageView
-        android:id="@+id/test001"
+    <TextView
+        android:id="@+id/test100"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="96dp"
+        android:layout_marginTop="16dp"
+        android:text="TextView"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.474"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/horonztalScrollView1"
-        tools:srcCompat="@tools:sample/avatars" />
+        app:layout_constraintTop_toBottomOf="@+id/horonztalScrollView1" />
+
+    <TextView
+        android:id="@+id/test101"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="49dp"
+        android:text="TextView"
+        android:textSize="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.46"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/test100"
+        app:layout_constraintVertical_bias="0.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

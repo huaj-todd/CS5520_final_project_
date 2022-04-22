@@ -2,6 +2,8 @@ package edu.neu.test;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,6 +15,9 @@ import android.widget.Toast;
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
+import com.spotify.sdk.android.auth.AuthorizationClient;
+import com.spotify.sdk.android.auth.AuthorizationRequest;
+import com.spotify.sdk.android.auth.AuthorizationResponse;
 
 import com.spotify.protocol.client.CallResult;
 import com.spotify.protocol.client.ErrorCallback;
@@ -20,13 +25,36 @@ import com.spotify.protocol.types.Image;
 import com.spotify.protocol.types.ListItems;
 import com.spotify.protocol.types.Track;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Random;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import com.squareup.picasso.Picasso;
 
 public class MainActivity extends AppCompatActivity {
     private static final String CLIENT_ID = "d137c858782648f7b8b9e8c87d4de56d";
     private static final String REDIRECT_URI = "comspotifytestsdk://callback";
     private SpotifyAppRemote mSpotifyAppRemote;
     private final ErrorCallback mErrorCallback = this::logError;
+
+    public static final int AUTH_TOKEN_REQUEST_CODE = 0x10;
+    public static final int AUTH_CODE_REQUEST_CODE = 0x11;
+
+    private final OkHttpClient mOkHttpClient = new OkHttpClient();
+    private String mAccessToken;
+    private String mAccessToken2;
+    private Call mCall;
 
 
     ImageView a;
@@ -37,7 +65,14 @@ public class MainActivity extends AppCompatActivity {
     ImageView a3;
     TextView t3;
     TextView tt1;
-    ImageView tt2;
+    //ImageView tt2;
+    TextView tt100;
+    TextView tt101;
+    String playlistID ="";
+
+    TextView artist1;
+    TextView artist2;
+    TextView artist3;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,137 +80,204 @@ public class MainActivity extends AppCompatActivity {
         a= findViewById(R.id.imageTest1);
         b1= findViewById(R.id.buttonTest1);
         t1 = findViewById(R.id.textView1);
+        artist2 = findViewById(R.id.textViewArtist2);
 
         a2 =findViewById(R.id.imageTest3);
         t2 = findViewById(R.id.textView4);
+        artist3 = findViewById(R.id.textViewartist3);
 
         a3=findViewById(R.id.imageView2);
         t3= findViewById(R.id.textView3);
+        artist1 = findViewById(R.id.textViewArtist1);
 
         tt1= findViewById(R.id.textView6);
-        tt2= findViewById(R.id.test001);
+
+        tt100 = findViewById(R.id.test100);
+        tt101 = findViewById(R.id.test101);
+        final AuthorizationRequest request = getAuthenticationRequest(AuthorizationResponse.Type.TOKEN);
+        AuthorizationClient.openLoginActivity(this, AUTH_TOKEN_REQUEST_CODE, request);
+        //getFeaturedList();
+    }
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        final AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, data);
+        if (requestCode == AUTH_TOKEN_REQUEST_CODE) {
+            mAccessToken = response.getAccessToken();
+            //tt100.setText("Something: "+mAccessToken);
+            getIntent().putExtra("token",mAccessToken);
+            getFeaturedList();
+        }
+    }
+    private void getFeaturedList(){
+        //Log.e("Good ",mAccessToken);
+        //mAccessToken2 = getIntent().getExtras().getString("token");
+        if(mAccessToken ==null) {
+            return;
+        }
+        String query = "https://api.spotify.com/v1/browse/featured-playlists?limit=1";
+        final Request request = new Request.Builder()
+                .url(query)
+                .addHeader("Authorization","Bearer " + mAccessToken)
+                .build();
+        cancelCall();
+        mCall = mOkHttpClient.newCall(request);
+
+        mCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+
+                try {
+                    final JSONObject jsonObject = new JSONObject(response.body().string());
+                    setResponse(jsonObject.get("playlists").toString());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+    private void getPlayList(){
+        if(mAccessToken == null){
+            return;
+        }
+        String query2 = "https://api.spotify.com/v1/playlists/"+playlistID;
+        final Request request2 = new Request.Builder()
+                .url(query2)
+                .addHeader("Authorization","Bearer " + mAccessToken)
+                .build();
+        cancelCall();
+        mCall = mOkHttpClient.newCall(request2);
+        mCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    final JSONObject jsonObject = new JSONObject(response.body().string());
+                    setResponse2(jsonObject.get("tracks").toString());
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
+    private void setResponse(final String text) {
+        runOnUiThread(() -> {
+            JSONObject object1 = null;
+            JSONArray array1 =null;
+            JSONObject object2 =null;
+            String test1="";
+            try {
+                object1 = new JSONObject(text);
+                //object2 = object1.getString("items");
+                test1 = object1.get("items").toString();
+                array1 = new JSONArray(test1);
+                object2 =array1.getJSONObject(0);
+                playlistID = object2.get("id").toString();
+                getPlayList();
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+            tt101.setText(playlistID);
+        });
+    }
+    private void setResponse2(final String text){
+        runOnUiThread(()->{
+            JSONObject object1 =null;
+            JSONArray array1 = null;
+            JSONObject object2 = null;
+            JSONObject object3 = null;
+            String test  ="";
+            try {
+                object1 = new JSONObject(text);
+                array1 = object1.getJSONArray("items");
+                object2 = array1.getJSONObject(1);
+                object3 = object2.getJSONObject("track");
+                test = getImageURL(object3);
+                Picasso.get().load(test).into(a3);
+                t3.setText(getSongName(object3));
+                artist1.setText(getArtistName(object3));
+                JSONObject object4 = array1.getJSONObject(2);
+                Picasso.get().load(getImageURL(object4.getJSONObject("track"))).into(a);
+                t1.setText(getSongName(object4.getJSONObject("track")));
+                artist2.setText(getArtistName(object4.getJSONObject("track")));
+                object4 = array1.getJSONObject(3);
+                Picasso.get().load(getImageURL(object4.getJSONObject("track"))).into(a2);
+                t2.setText(getSongName(object4.getJSONObject("track")));
+                artist3.setText(getArtistName(object4.getJSONObject("track")));
+
+
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+           // tt1.setText(test);
+
+        });
+    }
+
+    private String getSongName(JSONObject obj1) throws JSONException {
+        String test = obj1.get("name").toString();
+        return test;
+    }
+    private  String getURI(JSONObject obj1) throws JSONException{
+        return obj1.get("uri").toString();
+    }
+    private String getPreviewURL(JSONObject obj1) throws JSONException{
+        return obj1.get("preview_url").toString();
+    }
+
+    private String getArtistName(JSONObject obj1) throws JSONException{
+        JSONObject  obj2= obj1.getJSONObject("album");
+        JSONArray array1 = obj2.getJSONArray("artists");
+        JSONObject obj3 = array1.getJSONObject(0);
+        String test = obj3.get("name").toString();
+        return test;
+    }
+
+    private String getImageURL(JSONObject obj1) throws  JSONException{
+        JSONObject object1 = obj1.getJSONObject("album");
+        JSONArray array1 = object1.getJSONArray("images");
+        JSONObject obj2 = array1.getJSONObject(0);
+        String test = obj2.get("url").toString();
+        return test;
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        // Set the connection parameters
-        ConnectionParams connectionParams =
-                new ConnectionParams.Builder(CLIENT_ID)
-                        .setRedirectUri(REDIRECT_URI)
-                        .showAuthView(true)
-                        .build();
-        SpotifyAppRemote.connect(this, connectionParams,
-                new Connector.ConnectionListener() {
-
-                    @Override
-                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
-                        mSpotifyAppRemote = spotifyAppRemote;
-                        Log.d("MainActivity", "Connected! Yay!");
-                        Toast.makeText(getApplicationContext(),"Good!",Toast.LENGTH_LONG).show();
-
-                        // Now you can start interacting with App Remote
-                        connected();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        Log.e("MainActivity", throwable.getMessage(), throwable);
-
-                        // Something went wrong when attempting to connect! Handle errors here
-                    }
-                });
+    protected void onDestroy() {
+        cancelCall();
+        super.onDestroy();
     }
 
-    private void connected() {
-        // Then we will write some more code here.
-        mSpotifyAppRemote.getPlayerApi().play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
-        mSpotifyAppRemote.getPlayerApi()
-                .subscribeToPlayerState()
-                .setEventCallback(playerState -> {
-                    final Track track = playerState.track;
-
-                    if (track != null) {
-                        Log.d("MainActivity", " "+track.name + " by " + track.artist.name);
-                        Toast.makeText(getApplicationContext(),("MainActivity"+" "+track.name + " by " + track.artist.name),Toast.LENGTH_LONG).show();
-
-
-
-                        mSpotifyAppRemote
-                                .getContentApi()
-                                .getRecommendedContentItems("Default")
-                                .setResultCallback(data -> {
-                                    Log.i("MainActivity", "getRecommendedContentItems="+data.total);
-                                    //Be able to pick a recommendation section.
-                                    Random random = new Random();
-                                    int num = random.nextInt(data.total - 1 + 1) + 1;
-                                    //Log.d("num ",Integer.toString(num));
-                                    mSpotifyAppRemote.getContentApi().getChildrenOfItem(data.items[num],5,0 ).setResultCallback(data1 ->{
-                                        tt1.setText("Quick Listen:"+ data.items[num].title);
-                                       // Log.d("Good:", (Integer.toString(data.total)+"vs"+ Integer.toString(data1.total)));
-                                        mSpotifyAppRemote.getContentApi().getChildrenOfItem(data1.items[0],5,0 ).setResultCallback(data2 -> {
-                                            mSpotifyAppRemote.getImagesApi()
-                                                    .getImage(data2.items[0].imageUri,Image.Dimension.MEDIUM)
-                                                    .setResultCallback(bitmap->{
-                                                        a.setImageBitmap(bitmap);
-                                                        t1.setText(data2.items[0].title);
-
-                                                    });
-                                            mSpotifyAppRemote.getImagesApi()
-                                                    .getImage(data2.items[1].imageUri,Image.Dimension.MEDIUM)
-                                                    .setResultCallback(bitmap->{
-                                                        a2.setImageBitmap(bitmap);
-                                                        t2.setText(data2.items[1].title);
-                                                    });
-                                            mSpotifyAppRemote.getImagesApi()
-                                                    .getImage(data2.items[2].imageUri,Image.Dimension.MEDIUM)
-                                                    .setResultCallback(bitmap->{
-                                                        a3.setImageBitmap(bitmap);
-                                                        t3.setText(data2.items[2].title);
-                                                    });
-
-                                        });
-
-                                    });
-
-                                });
-                        /**
-                        mSpotifyAppRemote
-                                .getImagesApi()
-                                .getImage(track.imageUri,Image.Dimension.MEDIUM)
-                                .setResultCallback(bitmap -> {
-                                    a.setImageBitmap(bitmap);
-                                    //t1.setText(
-                                           // track.name);
-                                    a2.setImageBitmap(bitmap);
-                                    t2.setText(track.artist.name);
-
-                                    a3.setImageBitmap(bitmap);
-                                    t3.setText(track.album.name);
-
-                                    //tt2.setImageBitmap(bitmap);
-
-                                });
-*/
-                    }
-                    else if(track == null) {
-                        Log.d("Main Activity","Not playing any song at all");
-                    }
-                });
+    private AuthorizationRequest getAuthenticationRequest(AuthorizationResponse.Type type) {
+        return new AuthorizationRequest.Builder(CLIENT_ID, type, getRedirectUri().toString())
+                .setShowDialog(false)
+                .setScopes(new String[]{"user-read-email"})
+                .setCampaign("your-campaign-token")
+                .build();
     }
-
-    public void onConnectClicked(View v) {
-        connected();
+        private void cancelCall() {
+            if (mCall != null) {
+                mCall.cancel();
+            }
     }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
-    }
-    private void logError(Throwable throwable) {
-        Toast.makeText(this, "R.string.err_generic_toast", Toast.LENGTH_SHORT).show();
-        Log.e(MainActivity.class.getSimpleName(), "", throwable);
-    }
+        private void logError(Throwable throwable) {
+            Toast.makeText(this, "R.string.err_generic_toast", Toast.LENGTH_SHORT).show();
+            Log.e(MainActivity.class.getSimpleName(), "", throwable);
+        }
+        private Uri getRedirectUri() {
+            return Uri.parse(REDIRECT_URI);
+        }
 
 }
